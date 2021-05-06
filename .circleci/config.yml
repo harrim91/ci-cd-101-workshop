@@ -18,5 +18,10 @@ jobs:
     working_directory: ~/ci-cd-101-workshop
     steps:
       - checkout
-      - run: echo "hello world"
+      - run:
+          name: Install dependencies
+          command: yarn
+      - run:
+          name: Run test suite
+          command: yarn test
 
