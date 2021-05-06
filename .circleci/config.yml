@@ -3,9 +3,16 @@
 #######################
 
 workflows:
+  version: 2
   test-deploy:
     jobs:
       - test
+      - build-push:
+          requires:
+            - test
+          filters:
+            branches:
+              only: master
 
 #######################
 # Job Definitions
@@ -24,4 +31,34 @@ jobs:
       - run:
           name: Run test suite
           command: yarn test
+      - persist_to_workspace:
+          root: .
+          paths:
+            - Dockerfile
+            - etc
+            - css
+            - img
+            - index.html
+            - js
+            - mail
+            - scss
+
+  build-push:
+    docker:
+      - image: circleci/node:10.15.1-browsers
+    working_directory: ~/ci-cd-101-workshop
+
+    steps:
+      - attach_workspace:
+          at: .
+      - setup_remote_docker
+      - run:
+          name: Build and tag the Docker image
+          command: docker build -t $DOCKER_TAG -t ${DOCKER_TAG}:${CIRCLE_SHA1} .
+      - run:
+          name: Login to Dockerhub and push
+          command: |
+            echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
+            docker push $DOCKER_TAG
+            docker push ${DOCKER_TAG}:${CIRCLE_SHA1}
 
